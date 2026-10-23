@@ -58,8 +58,9 @@ model = load_forecasting_model()
 # ==========================================
 # 3. SIDEBAR & USER CONTROLS
 # ==========================================
+# Sidebar update
 with st.sidebar:
-    st.image("https://icons8.com", width=80)
+    st.markdown("# ⚡ Grid AI")  # Broken image link ki jagah clean typography indicator
     st.markdown("### **Control Panel**")
     st.write("Select the baseline parameters to forecast target electricity grid consumption constraints.")
     
@@ -70,6 +71,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**Model Specifications:**")
     st.markdown("- Framework: `XGBoost Regressor` \n- Language Target: `English (Standard)`")
+
 
 # ==========================================
 # 4. APP MAIN BODY HEADER
@@ -98,7 +100,8 @@ if model is not None:
     # ==========================================
     # 5. CORE PREDICTION LOGIC
     # ==========================================
-    prediction = model.predict(input_data)[0]
+    # Core prediction logic
+    prediction = model.predict(input_data)
     
     # Simulate a full 24-hour cycle layout for visual graph enhancement
     hours_24 = list(range(24))
@@ -110,37 +113,11 @@ if model is not None:
     })
     hourly_predictions = model.predict(daily_simulation_df)
 
-    # Display real-time Key Metrics Cards
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-            <div class="metric-card">
-                <p style="margin:0; color:#6B7280; font-size:14px; font-weight:600;">FORECASTED POWER DEMAND</p>
-                <h2 style="margin:5px 0 0 0; color:#1E3A8A;">{prediction:.2f} MW</h2>
-                <p style="margin:0; color:#2563EB; font-size:12px;">At {selected_datetime.strftime('%H:%M %p')}</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with col2:
-        max_load = np.max(hourly_predictions)
-        max_hour = np.argmax(hourly_predictions)
-        st.markdown(f"""
-            <div class="metric-card" style="border-left-color: #EF4444;">
-                <p style="margin:0; color:#6B7280; font-size:14px; font-weight:600;">PEAK DEMAND TODAY</p>
-                <h2 style="margin:5px 0 0 0; color:#DC2626;">{max_load:.2f} MW</h2>
-                <p style="margin:0; color:#EF4444; font-size:12px;">Expected hour window: {max_hour}:00</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with col3:
-        min_load = np.min(hourly_predictions)
-        st.markdown(f"""
-            <div class="metric-card" style="border-left-color: #10B981;">
-                <p style="margin:0; color:#6B7280; font-size:14px; font-weight:600;">BASE LOAD DEMAND</p>
-                <h2 style="margin:5px 0 0 0; color:#059669;">{min_load:.2f} MW</h2>
-                <p style="margin:0; color:#10B981; font-size:12px;">Minimum continuous infrastructure target</p>
-            </div>
-        """, unsafe_allow_html=True)
+    # Real-world logical protection: Electricity cannot be negative
+    # Agar model dummy data ki wajah se minus prediction de, toh use 0 ya positive floor de dein
+    prediction = np.maximum(0, prediction[0])
+    hourly_predictions = np.maximum(0, hourly_predictions)
+
 
     # ==========================================
     # 6. PREMIUM VISUALIZATIONS (PLOTLY CHART)
